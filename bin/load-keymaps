@@ -1,0 +1,5 @@
+#!/bin/bash
+
+xkbcomp -i 13 ~/keymaps/arduino/keybrd.xkb $DISPLAY
+xkbcomp -i 10 ~/keymaps/tartarus/keybrd.xkb $DISPLAY
+xkbcomp -i 9 ~/keymaps/dell/keybrd.xkb $DISPLAY

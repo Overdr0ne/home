@@ -1,0 +1,4 @@
+export TMP=$GIT_PAGER
+export GIT_PAGER='less -p"\(HEAD"'
+git log --oneline --graph --decorate --all
+export GIT_PAGER=$TMP

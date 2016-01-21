@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+#
+# For when you want to run a gui from a terminal, but not create another window:
+# This script will launch the given process, and automatically hide itself in
+# the scratchpad. When the child process closes, that window will be restored.
+
+"$*" &
+child="$!"
+xdotool set_window --name "$!" `xdotool getactivewindow`
+i3-msg move scratchpad
+wait $child
+i3-msg [title="$child"] scratchpad show
+i3-msg floating toggle

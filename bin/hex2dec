@@ -1,0 +1,4 @@
+#!/bin/bash
+
+#echo "ibase=16; $1" | bc
+echo $((16#$1))
