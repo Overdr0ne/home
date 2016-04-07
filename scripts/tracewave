@@ -1,0 +1,367 @@
+#!/usr/bin/python
+
+import sys
+import os
+import glob
+
+# find the real script prefix/postfix so we use the correct
+# lib for this script.
+install_dir = os.path.dirname(os.path.realpath(sys.argv[0]))
+
+local_lib_dir = os.path.join(install_dir, 'lbtrace')
+if os.path.exists(local_lib_dir):
+    lib_dir = install_dir
+else:
+    lib_dir = os.path.join(os.path.dirname(install_dir), 'lib', 'python*', 'site-packages')
+    lib_dir_glob = glob.glob(lib_dir)
+    if len(lib_dir_glob) == 1:
+        lib_dir = lib_dir_glob[0]
+    else:
+        sys.stderr.write('Could not find lbtrace library locally in %s, and could not find python site-packages at %s either.\n' % (local_lib_dir, lib_dir))
+        sys.exit(1)
+
+sys.path.append(lib_dir)
+
+import lbtrace.parser
+import lbtrace.wave
+import lbtrace.stdhelp as stdhelp
+
+g_scriptName = os.path.basename(sys.argv[0])
+ 
+stdhelp.usageText = '''
+  ''' + g_scriptName + ''' <lbtrace-listing-file> <output-file>
+'''
+
+stdhelp.descriptionText = '''
+  Reads an lbtrace listing file (e.g. lbtrace.lst) and produces a wave file which can be viewed with gtkwave (for example).
+
+  This program looks for a special sequence of characters in the listing "[~]" (supposed to look like a sine wave in a window) and creates waves based on that text. If you mark up your lbtrace text appropriately, you can get a very useful view of your data.
+
+  Markup (assume your group name is MYGRP):
+    Signals:
+      A signal will be generated when a "[~" is encountered. The name of the signal is the next word following the closing bracket (]). Then a space is looked for followed by a numeric value. Colons (:) and equal signs (=) are converted to spaces.
+      Examples:
+        To create a signal named "empty-lines" (under the MYGRP signal hierarchy) you could add the following into the lbtrace listing via LBFMT or via your lbtrace parser.
+
+          [~]empty-lines:3876
+        OR
+          [~]empty-lines = 3876
+        OR
+          [~]empty-lines 3876
+
+        Multiple signals can appear on the same line...
+
+          [~]post-lines:512, [~]total-posted-lines:512 [~]empty-lines:0
+
+      Following the tilde (~) a number is allowed which will make the signal be a bit vector of that width. If the number is omitted then the value is treated as a real number. The advantage to bit vectors is that the viewer can display 1 bit vectors as a single line (rather than a bus with 0 vs. 1), and multibit vectors can be separated into bit fields which can be useful when viewing registers.
+
+        [~1]running:0
+        [~32]config-register 0x12340bad
+
+      A special case: an exclamation point (!) can follow the tilde (~) which will make the specified signal (which is a 1-bit signal) pulse for one time-tic (usually 1us). (Think the signal is going "bang!") This can be useful for marking error conditions (for example) without adding multiple traces.
+
+        [~!]error
+        [~!]important-event
+
+    Grouping:
+      Traces are placed under the lbtrace group name. But additional subgroups can be added. For example if you have two devices you might want to have separate traces for each device. To do this, the first character following the standard header information for that trace should be an open parenthesis.
+
+      For example:
+        (Device0) [~1]running:0
+        (Device1) [~1]running:1
+        (Device0) [~1]running:1
+        (Device1) [~1]running:0
+        (Device0) [~1]running:1
+
+        Creates two signals MYGRP->Device0->running and MYGRP->Device1->running.
+
+      In addition these subgroups can have subgroups by using directory notation within the parentheses. For example, if each device had several stages, you could create eight separate signals in the wave file if these four lines appeared in the listing...
+        (Device0/StageAlpha) [~1]running:0 [~]empty-lines = 10
+        (Device0/StageOmega) [~1]running:1 [~]empty-lines = 100
+        (Device1/StageAlpha) [~1]running:1 [~]empty-lines = 5
+        (Device1/StageOmega) [~1]running:0 [~]empty-lines = 50
+
+    Note: These groups and subgroups apply to all of the signals on that trace.
+'''
+
+stdhelp.optionsText = '''
+  -a, --all      Create waves for every line in the listing file.
+      --text     (default False) Add a wave that shows the string from the listing file.
+      --no-time  (default time) Disable creating a wave that shows the timestamp from the listing file.
+      --pure-vcd (default False) Turn off features (such as strings) which the pure VCD spec did not support.
+      --asela    (default False) Tweak .vcd file so it can be read by the Asela viewer.
+  -v, --verbose  (default False) Complain if there are problems.
+'''
+
+stdhelp.supportText = '''
+(Call or email Bob Henz for bug reporting/feature requests.)
+'''
+
+import re
+import tempfile
+import shutil
+
+def MakeWave (lbtraceParserObj, outputFile,
+              bAselaMode = False,
+              bWaveEveryTrace = False,
+              bWaveTraceText = False,
+              bWaveTraceTimeString = False,
+              bWaveTraceTimeNumbers = False,
+
+              ## Wave the trace line number. (Seems like this is a must have.)
+              bWaveTraceLine = True,
+
+              ## Wave the cpu number. (Seems like this is a must have.)
+              bWaveTraceCpu = True,
+              bVerbose = False):
+
+    count = 0
+
+    ## Write the header for the signals we will generate from any traces.
+    outputFile.write('$timescale 1us $end\n\n')
+
+    outputFile.write('$scope module lbtrace $end\n')
+    if bWaveTraceText:
+        outputFile.write('  $var real 1 !! log $end\n')
+    if bWaveTraceLine:
+        outputFile.write('  $var real 1 !" log-line $end\n')
+    if bWaveTraceCpu:
+        outputFile.write('  $var real 1 !# cpu $end\n')
+    if bWaveTraceTimeString:
+        outputFile.write('  $var real 1 !$ time $end\n')
+    if bWaveTraceTimeNumbers:
+        outputFile.write('  $var real 1 !% hour $end\n')
+        outputFile.write('  $var real 1 !^ minute $end\n')
+        outputFile.write('  $var real 1 !& second $end\n')
+        outputFile.write('  $var real 1 !* ms $end\n')
+        outputFile.write('  $var real 1 !( us $end\n')
+
+    ## Asela wants everything to be contained in a single,
+    ## top-level scope. The lbtrace module will be that scope.
+    if not bAselaMode:
+        outputFile.write('$upscope $end\n\n')
+
+    ## There is more to the header than what's above.
+    ## We have to create an entry for each signal that the
+    ## lbtrace has waved up in it. But in order to know what
+    ## those signals are we have to craw through the lbtrace
+    ## listing. If we're going to do that, we might as well
+    ## generate the entries for each signal change and store
+    ## that into an temporary file at the same time that we're
+    ## building a list of signals.
+
+    ## Generate a temporary file that we will later concatenate
+    ## with the output file once we have the full header written.
+    (tmpFd, tmpFileName) = tempfile.mkstemp()
+    tmpFile = os.fdopen(tmpFd, 'w+')
+
+    vcdWaveGroupObjDict = dict()
+
+    ## Get the first trace in the listing file. We will use the timestamp
+    ## of this trace to normalize our waveforms around the time where
+    ## we actually have data.
+    traceObj = lbtraceParserObj.GetTraceObject()
+    if not traceObj:
+        sys.stderr.write("No traces could be parsed from the listing file.")
+        sys.exit(1)
+
+    (startTimeSeconds, startTimeMicroseconds) = traceObj.GetTime()
+
+    while traceObj:
+        #if count > 1000:
+        #    break
+        count += 1
+
+        ## See if we have seen a trace object from this group before.
+        ## If not add it to our list and assign it an ID prefix.
+        if not vcdWaveGroupObjDict.has_key(traceObj.groupName):
+            vcdWaveGroupObjDict[traceObj.groupName] = lbtrace.wave.WaveGroupClass(traceObj.groupName)
+
+        ## Extract wave/value pairs from the text of the trace.
+        (waveAndValueList, fixupList) = vcdWaveGroupObjDict[traceObj.groupName].ParseTraceText(traceObj.text, traceObj.logLine)
+
+        ## If we found some wave/value pairs (or if we were told to wave up every trace regardless) then
+        ## create some signal change events.
+        if waveAndValueList or bWaveEveryTrace:
+            timestamp = traceObj.GetDeltaMicroseconds(startTimeSeconds, startTimeMicroseconds)
+            tmpFile.write('#' + str(timestamp) + '\n')
+
+            if bWaveTraceText:
+                text = traceObj.text
+                text = text.replace('\n', '.')
+                text = text.replace(' ', '.')
+                text = text.replace('\t', '------->')
+                #text = re.sub('\[\~\w\]', '', text)
+                tmpFile.write('s' + text + ' !!\n')
+
+            if bWaveTraceLine:
+                tmpFile.write('r' + str(traceObj.logLine) + ' !"\n')
+
+            if bWaveTraceCpu:
+                tmpFile.write('r' + str(traceObj.cpu) + ' !#\n')
+
+            if bWaveTraceTimeString:
+                tmpFile.write('s' + traceObj.timeStampString + ' !$\n')
+
+            if bWaveTraceTimeNumbers:
+                tmpFile.write('r' + str(traceObj.hour) + ' !%\n')
+                tmpFile.write('r' + str(traceObj.minute) + ' !^\n')
+                tmpFile.write('r' + str(traceObj.second) + ' !&\n')
+                tmpFile.write('r' + str(traceObj.ms) + ' !*\n')
+                tmpFile.write('r' + str(traceObj.us) + ' !(\n')
+
+            if waveAndValueList:
+                for (waveObj, value) in waveAndValueList:
+                    tmpFile.write(waveObj.GetVcdText(value))
+
+            if fixupList and len(fixupList):
+                tmpFile.write('#' + str(timestamp + 1) + '\n')
+                for (waveObj, value) in fixupList:
+                    tmpFile.write(waveObj.GetVcdText(value))
+
+            tmpFile.write('\n')
+
+        ## On to the next trace
+        #traceObj = lbtraceParserObj.GetTraceObject()
+        while True:
+            try:
+                traceObj = lbtraceParserObj.GetTraceObject()
+            except lbtrace.parser.ParseError,e:
+                ## If we got a parse error, then move on to the next line.
+                ## Otherwise we will give up if someone has messed with
+                ## their group names, even though the user might not care
+                ## about that particular group (for example).
+                if (bVerbose):
+                    e.PrintError()
+                continue
+            else:
+                break
+
+
+    ## Back to creating the header in the output file.
+    ## Now we have a list of all the signals we encountered in the listing file.
+
+    ## Add header declarations for each of the signals found.
+    for (key, obj) in vcdWaveGroupObjDict.items():
+        obj.WriteVcdScope(outputFile)
+
+    ## Asela wants everything to be contained in a single,
+    ## top-level scope. The lbtrace module will be that scope, close it now.
+    if bAselaMode:
+        outputFile.write('$upscope $end\n')
+
+    ## Say we're done defining signals.
+    outputFile.write('$enddefinitions $end\n\n')
+
+    ## Now do the dumpvars section (inital values of everything)
+    if bAselaMode:
+        outputFile.write('#0\n')
+    else:
+        outputFile.write('$dumpvars\n')
+
+    ## Dump inital values for the lbtrace-header waves
+    if bWaveTraceText:
+        outputFile.write('s !!\n')
+    if bWaveTraceLine:
+        outputFile.write('r0 !"\n')
+    if bWaveTraceCpu:
+        outputFile.write('r0 !#\n')
+    if bWaveTraceTimeString:
+        outputFile.write('s !$\n')
+    if bWaveTraceTimeNumbers:
+        outputFile.write('r0 !%\n')
+        outputFile.write('r0 !^\n')
+        outputFile.write('r0 !&\n')
+        outputFile.write('r0 !*\n')
+        outputFile.write('r0 !(\n')
+
+    ## Dump initial values for the signals we've discovered.
+    for (key, obj) in vcdWaveGroupObjDict.items():
+        obj.WriteVcdDumpvars(outputFile)
+
+    if not bAselaMode:
+        outputFile.write('$end\n\n')
+
+    ## The output file's header if finally complete.
+
+    ## We need to concatenate the header on top of the temporary file.
+    ## Or another way to say it... we need to copy the entire tmpfile
+    ## into the output file.
+    tmpFile.seek(0)
+    shutil.copyfileobj(tmpFile, outputFile)
+
+    tmpFile.close()
+    os.remove(tmpFileName)
+
+
+if __name__ == '__main__':
+    ## Set the default values for options
+
+    ## Wave the timestamp as a string
+    bWaveTraceTimeString = True
+
+    ## Wave the timestamp as a number
+    bWaveTraceTimeNumbers = False
+
+    ## --all (default is False)
+    bWaveEveryTrace = False
+
+    ## --text (default is False)
+    bWaveTraceText = False
+
+    ## --pure-vcd (default is False)
+    bPureVcd = False
+
+    bAselaMode = False
+    bVerbose = False
+
+    optionList, argList = stdhelp.ParseOptions('av', ['all', 'text', 'no-time', 'pure-vcd', 'asela', 'verbose'])
+
+    ## Process what the user specified for options
+    for opt, value in optionList:
+        if opt in ('-a', '--all'):
+            bWaveEveryTrace = True
+            bWaveTraceText = True
+        elif opt in ('--text'):
+            bWaveTraceText = True
+        elif opt in ('--no-time'):
+            bWaveTraceTimeString = False
+            bWaveTraceTimeNumbers = False
+        elif opt in ('--pure-vcd'):
+            bPureVcd = True
+        elif opt == '--asela':
+            bAselaMode = True
+        if opt in ('-v', '--verbose'):
+            bVerbose = True
+
+    lbtrace.wave.ASELA_MODE = bAselaMode
+
+    ## Disable features (such as strings) that
+    ## are not supported by the pure VCD spec.
+    if bPureVcd:
+        bWaveTraceText = False
+        if bWaveTraceTimeString:
+            bWaveTraceTimeString = False
+            bWaveTraceTimeNumbers = True
+
+    ## Process the arguments
+    if len(argList) < 2:
+        stdhelp.PrintHelpAndExit(2, 'Invalid number of arguments.')
+
+    lbtraceFile = open(argList[0], 'r')
+
+    if not lbtraceFile:
+        stdhelp.PrintHelpAndExit(2, 'Unable to open listing file "' + argList[0] + '"')
+
+    outputFile = open(argList[1], 'w')
+    if not outputFile:
+        stdhelp.PrintHelpAndExit(2, 'Unable to open output file "' + argList[1] + '"')
+
+    lbtraceParserObj = lbtrace.parser.LbtraceParserClass(lbtraceFile)
+
+    MakeWave(lbtraceParserObj, outputFile, bAselaMode,
+             bWaveEveryTrace, bWaveTraceText,
+             bWaveTraceTimeString, bWaveTraceTimeNumbers, bVerbose = bVerbose)
+
+    lbtraceFile.close()
+    outputFile.close()

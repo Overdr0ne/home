@@ -1,0 +1,472 @@
+#!/bin/bash
+# vi: set ts=8 sw=4 sts=4 et:
+
+# The next generation of yocmake.
+
+version=1.0
+
+function usage()
+{
+        cat <<EOH
+Usage: $(basename $0) [options] [unit2] [unit2...] [unit/target1] [unit/target2]
+
+Wrapper utility for bitbake.
+
+Global Options (can be placed anywhere on command line):
+  -j
+  --jobs
+       Number of jobs for commands that support it (only used for make in
+       devshell mode).  Defaults to 0 or whatever numjobs is set to in
+       ${HOME}/.yocmakerc (example numjobs=8).
+  -t
+  --show-times
+       Prepend each command with time.  Defaults to 0 and can be set to true in
+       ${HOME}/.yocmakerc by setting show_times=1.
+  -d
+  --debug
+       Show what is happening internally.
+  -n
+  --dry-run
+       Show basicially what will be done.
+  -v
+  --version
+       Tell user current version is $version.
+  -h
+  --help
+       Show this message.
+
+Positional Options (can be used more than once):
+  -x
+  --execute
+       Next argument is executed.  Use quotes to pass arguments.
+  -c CMD
+  --cmd CMD
+       Passed on to bit bake.
+  -C INVALIDATE_STAMP
+  --clear-stamp INVALIDATE_STAMP
+       Passed on to bit bake.
+
+Positional Package Options for -c (-C):
+  n:      no command specified
+  f:      --force (must be first if: will not work.)
+  s: (S:) configure (setup)
+  r: (R:) clean (remove)
+  c: (C:) compile
+  b: (B:) build
+  u: (U:) check (unit test)
+  i: (I:) install
+  d: (D:) devshell
+  p: (P:) populate_sysroot
+  w: (W:) package_write (write package)
+
+Examples (replacing bitbake):
+
+   To do this:
+   bitbake settings -c configure && bitbake settings -c build \\
+     && bitbake hydra -c build
+   
+   You would do this:
+   $(basename $0) sb: settings b: hydra
+   
+   Or this:
+   $(basename $0) -c configure settings -c build settings hydra
+
+Examples (replacing bitbake -c devshell):
+
+   To do this:
+   bitbake -c devshell jobsystem
+   devshell> cd $B
+   devshell> make libjobsystem.a
+   devshell> make check
+   devshell> install-with-wrapper libjobsystem.a \${PKG_CONFIG_SYSROOT_DIR}/usr/lib/libjobsystem.a
+   devshell> exit
+   bitbake -c devshell hydra
+   devshell> cd $B
+   devshell> make hydra
+   devshell> install-with-wrapper hydra \${PKG_CONFIG_SYSROOT_DIR}/usr/bin/hydra
+   devshell> exit
+   
+   You would do this:
+   $(basename $0) jobsystem/libjobsystem.a jobsystem/check hydra/hydra
+   
+   Or better if using bash:
+   $(basename $0) jobsystem/{libjobsystem.a,check} hydra/hydra
+
+EOH
+}
+
+commands=(
+    "n "
+    "fa--force"
+    "s -c configure"
+    "S -C configure"
+    "r -c clean"
+    "R -C clean"
+    "c -c compile"
+    "C -C compile"
+    "b -c build"
+    "B -C build"
+    "u -c check"
+    "U -C check"
+    "i -c install"
+    "I -C install"
+    "d -c devshell"
+    "D -C devshell"
+    # "p -c package"
+    # "P -C package"
+    "p -c populate_sysroot"
+    "P -C populate_sysroot"
+    "w -c package_write"
+    "W -C package_write"
+)
+
+function die()
+{
+    echo "$(basename $0): $@" >&2
+    exit 1
+}
+
+function quit()
+{
+    trap '' INT TERM EXIT
+    kill 0
+    exit 1
+}
+
+function get_opts()
+{
+    debug=0
+    dry_run=0
+    numjobs=0
+    yocmake_ps=''
+    if [ -e "${HOME}/.yocmakerc" ]; then
+        source ${HOME}/.yocmakerc
+    fi
+    if [ ${#yocmake_ps} -eq 0 ]; then
+        yocmake_ps="=YM=> %s"
+    elif [[ ! ${yocmake_ps} =~ ^.*%s.*$ ]]; then
+        yocmake_ps+="%s"
+    fi
+    args=()
+    show_times=0
+    while [ -n "$1" ]; do
+        case "$1" in
+        -d|--debug)
+            debug=1
+            ;;
+        -n|--dry-run)
+            dry_run=1
+            ;;
+        -v|--version)
+            echo $(basename $0) version ${version}
+            exit
+            ;;
+        -h|--help)
+            usage
+            exit
+            ;;
+        -n|--jobs)
+            shift
+            numjobs=$1
+            ;;
+        -x|--execute)
+            shift
+            args+=("execute:$1")
+            ;;
+        -t|--show-times)
+            show_times=1
+            ;;
+        -c|--cmd)
+            shift
+            args+=("-c$1")
+            ;;
+        -C|--clear-stamp)
+            shift
+            args+=("-C$1")
+            ;;
+        -*)
+            option=$1
+            die "unknown option $option."
+            ;;
+        *)
+            args+=($1)
+            ;;
+        esac
+        shift
+    done
+}
+
+function run_command()
+{
+    command="$@"
+    if [ ${show_times} -ne 0 ]; then
+        command="time ${command}"
+    fi
+    if [ ${dry_run} -eq 0 ]; then
+        printf "${yocmake_ps}\n" "${command}"
+        eval ${command}
+    else
+        echo ${command}
+    fi
+}
+
+function rev_from_file()
+{
+    local IFS=
+    argfile="$*"
+    content=$(cat ${argfile})
+    urev=$(echo -e ${content} | perl -ne 'print if s|^.*?REV.*?([[:xdigit:]]{40}).*$|\1|')
+    if [ ${#urev} -eq 0 ]; then
+        # try subversion style revision
+        urev=$(echo -e ${content} | perl -ne 'print if s|^.*?REV.*?([[:digit:]]+).*$|\1|')
+    fi
+}
+
+function rev_from_content()
+{
+    local IFS=$' '
+    local reqfile=''
+    for reqfile in $(echo ${content} | sed -n 's/^require //p' | tr '\n' ' '); do
+        fullfile="${file%/*}/${reqfile}"
+        rev_from_file ${fullfile}
+        if [ ${#urev} -gt 0 ]; then
+            break
+        fi
+        rev_from_content
+        # rev_from_content # might be needed if required files also require.
+    done
+}
+
+function rev_from_metalexmark()
+{
+    local startdir=$(pwd)
+    cd ${meta_lexmark_dir}
+    local IFS=
+    files=$(find . -regex "^.*/${package}_\(git\|svn\)\.bb$" 2>/dev/null)
+    if [ $? -eq 0 ]; then
+        local IFS=$'\n'
+        file=''
+        for entry in ${files[@]}; do
+            entry=${entry##*:}
+            if [[ ! ${entry} =~ \.bb|\.inc ]]; then continue; fi
+            file=${entry}
+            [ ${debug} -eq 0 ] || echo "[$(basename $0)] ${file} .bb file being evaluated for ${package}."
+            if [[ ${file} =~ /${package} ]]; then break; fi
+        done
+        [ ${debug} -eq 0 ] || echo "[$(basename $0)] ${file} .bb file for ${package}."
+        if [ -n "${file}" ]; then
+            rev_from_file ${file}
+            if [ ${#urev} -eq 0 ]; then
+                rev_from_content
+            fi
+        fi
+    fi
+    cd ${startdir}
+}
+
+regex_list=(
+    "^execute:(.+)$"
+    ":$"
+    "^\-[Cc].*$"
+    "^([^/]+)/(.*)$"
+)
+
+func_list=(
+    func_execute
+    func_packopt
+    func_bitbopt
+    func_devshel
+)
+
+function func_execute()
+{
+    run_command ${BASH_REMATCH[1]}
+    stat=$?
+}
+
+function func_packopt()
+{
+    opts=()
+    local IFS=$'\n'
+    flags=()
+    for idx in $(seq 2 ${#arg}); do
+        chr=${arg:${idx}-2:1}
+        found=0
+        for command in ${commands[@]}; do
+            if [ "${chr}" = "${command:0:1}" ]; then
+                sub=${command:1:1}
+                command=${command:2}
+                if [ ${#command} -gt 0 ]; then
+                    if [ "${sub}" = "a" ]; then
+                        flags[${#flags[@]}]=${command}
+                    else
+                        [ ${#flags[@]} -ne 0 ] && command="${flags[@]} ${command}"
+                        opts+=(${command})
+                    fi
+                fi
+                found=1
+                break
+            fi
+        done
+        if [ ${found} -eq 0 ]; then
+            die "Package option ${chr} not known."
+        fi
+    done
+}
+
+function func_bitbopt()
+{
+    opts=("${arg:0:2} ${arg:2}")
+}
+
+function func_devshel()
+{
+    package=${BASH_REMATCH[1]}
+    target=${BASH_REMATCH[2]}
+    local startdir=$(pwd)
+    if [[ ${BUILDDIR} =~ ^(.*)/$ ]]; then
+        BUILDDIR=${BASH_REMATCH[1]}
+    fi
+    if [[ ${BUILDDIR} =~ ^(.*)/(.*)/(.*)$ ]]; then
+        build_bundle_dir=${BASH_REMATCH[1]}
+    fi
+    [ -d "${build_bundle_dir}" ] || die "Could not determine build-bundle directory for $BUILDDIR."
+    meta_lexmark_dir="${build_bundle_dir}/meta-lexmark"
+    [ -d "${meta_lexmark_dir}" ] || die "Could not determine meta-lexmark directory for $BUILDDIR."
+    cd ${build_bundle_dir}
+    firstrev=$(git rev-list HEAD --reverse | head -n 1)
+    mrev=$(git diff ${firstrev}..HEAD -- meta-lexmark 2>/dev/null | sed -n 's/^+Subproject commit \([0123456789abcdef]*\).*$/\1/p')
+    [ ${debug} -eq 0 ] || echo "[$(basename $0)] ${mrev} is revision for the meta-lexmark."
+    [ -n "${mrev}" ] || die "Could not determine meta-lexmark revision for $BUILDDIR."
+    urev=''
+    rev_from_metalexmark
+    [ -n "${urev}" ] || die "Could not determine ${package} revision for $BUILDDIR."
+    [ ${debug} -eq 0 ] || echo "[$(basename $0)] ${urev} is revision for the ${package} package."
+    dir=$(ls -1dt ${BUILDDIR}/tmp/work/*/${package}/*${urev}*/temp 2>/dev/null | tail -1)
+    if [ ! -d "${dir}" ]; then
+        # yocto version 1.5 switch started giving us short revisions.
+        srev=${urev:0:10}
+        dir=$(ls -1dt ${BUILDDIR}/tmp/work/*/${package}/*${srev}*/temp 2>/dev/null | tail -1)
+    fi
+    stat=1
+    if [ -d "${dir}" ]; then
+        cd ${dir}
+        local file=''
+        [ ${debug} -eq 0 ] || echo "[$(basename $0)] ${dir} is directory of shell files."
+        local IFS=$'\n'
+        for file in $(grep -l PKG_CONFIG_SYSROOT_DIR run.do_*); do
+            [ ${debug} -eq 0 ] || echo "[$(basename $0)] ${dir}/${file} being evalated."
+            grep '^cd ' ${file} >/dev/null 2>&1
+            [ $? -ne 0 ] || break;
+            file=''
+        done
+        [ -n "${file}" ] || die "Could not determine shell script file for package ${package} to get environment from."
+        [ ${debug} -eq 0 ] || echo "[$(basename $0)] ${dir}/${file} is env file."
+        content=$(<${file})
+        for line in ${content[@]}; do
+            if [[ ${line} =~ ^(cd |export |unset ).*$ ]]; then
+                if [ "${line:0:3}" = "cd " ]; then
+                    if [ ${dry_run} -eq 0 ]; then
+                        printf "${yocmake_ps}\n" "${line}"
+                    else
+                        echo ${line}
+                    fi
+                fi
+                eval ${line}
+            fi
+        done
+        unset IFS
+        if [ ${numjobs} -gt 0 ]; then
+            run_command make -j ${numjobs} ${target}
+        else
+            run_command make ${target}
+        fi
+        stat=$?
+        if [ ${stat} -eq 0 -a ${#target} -gt 0 ]; then
+            dest_dir=""
+            dtarget=$(basename ${target})
+            if [ -x ${target} ]; then
+                dest_dir="usr/bin"
+            fi
+            if [[ ${target} =~ ^.*\.(so|a)$ ]]; then
+                dest_dir="usr/lib"
+                dtarget=${target}
+            fi
+            if [ -n "${dest_dir}" -a ${target} -nt ${PKG_CONFIG_SYSROOT_DIR}/${dest_dir}/${dtarget} ]; then
+                run_command install-with-wrapper ${target} ${PKG_CONFIG_SYSROOT_DIR}/${dest_dir}/${dtarget}
+                stat=$?
+            fi
+        fi
+    else
+        die "Could not find temp directory for ${package} at ${urev} revision."
+    fi
+    cd ${startdir}
+}
+
+function func_default()
+{
+    if [ ${#cmds[@]} -gt 0 ]; then
+        stat=0
+        if [ ${#opts[@]} -ne 0 ]; then
+            for opt in ${opts[@]}; do
+                run_command nice -n 5 bitbake ${opt} ${cmds[@]}
+            done
+        else
+            run_command nice -n 5 bitbake ${cmds[@]}
+        fi
+        stat=$?
+    fi
+}
+
+function main()
+{
+    get_opts "$@"
+    if [ -z "$BUILDDIR" ]; then
+        die "You have not sourced init-build-env yet."
+    fi
+    if [ "$(pwd)" != "$BUILDDIR" ]; then
+        die "You are not in a BUILDDIR directory (cd \$BUILDDIR)."
+    fi
+    if [ ! -f "conf/auto.conf" ]; then
+        die "You have not done configure-workspace yet."
+    fi
+    opts=()
+    cmds=()
+    stat=0
+    trap quit INT TERM EXIT
+    local IFS=$'\n'
+    for arg in ${args[@]}; do
+        for (( idx = 0; idx < ${#regex_list[@]}; idx++ )); do
+            regex=${regex_list[$idx]}
+            if [[ ${arg} =~ ${regex} ]]; then
+                func=${func_list[$idx]}
+                break
+            fi
+            func=''
+        done
+        if [ ${#func} -ne 0 ]; then
+            stat=0
+            func_default
+            if [ ${stat} -eq 0 ]; then
+                opts=()
+                cmds=()
+                eval ${func}
+            fi
+        else
+            local IFS=
+            stat=0
+            cmds+=(${arg})
+        fi
+        if [ ${stat} -ne 0 ]; then break; fi
+    done
+    if [ ${stat} -eq 0 ]; then
+        func_default
+    fi
+    trap '' INT TERM EXIT
+    if [ ${stat} -ne 0 ]; then
+        exit ${stat}
+    fi
+}
+
+main "$@"
+

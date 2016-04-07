@@ -1,0 +1,3 @@
+porkeys -s engineless
+porkeys -s disable_scanner
+porkeys -s clear_nvram

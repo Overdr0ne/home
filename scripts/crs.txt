@@ -1,0 +1,269 @@
+set bootargs $bootargs cpuidle.off=1
+run bootcmd
+
+set bootargs $bootargs cpuidle-pegmatite.verbose=0x10
+set bootargs $bootargs cpuidle-pegmatite.skip_sync=0x1
+set bootargs $bootargs cpuidle-pegmatite.skip_wake=0x1
+set bootargs $bootargs pegmatite-mailbox-testclient.verb_level=0x40 
+set bootargs $bootargs pegmatite-mailbox-testclient.resume_delay=500
+set bootargs $bootargs pegmatite-mailbox-testclient.cfg_mode_svc=0x1 
+set bootargs $bootargs pegmatite-mailbox-testclient.cfg_mode_wfi=0x1 
+set bootargs $bootargs pegmatite-mailbox-testclient.cfg_global=0x38 
+set bootargs $bootargs pegmatite-mailbox-testclient.cfg_sys_flgs=0xF 
+set bootargs $bootargs pegmatite-mailbox-testclient.cfg_dup_irq_en=0
+set bootargs $bootargs pegmatite-mailbox-testclient.cfg_wk_alarm=100
+set bootargs $bootargs pegmatite-mailbox-testclient.cfg_wk_irq=0x2a
+
+set bootargs $bootargs cpuidle.off=1
+set bootargs $bootargs pegmatite-mailbox-testclient.cfg_mode_wfi=0xc300
+set bootargs $bootargs pegmatite-mailbox-testclient.cfg_dup_irq_en=1
+
+./Wake-LS-S2R-WakeLoop_3.02.sh -m 5 -M 10 -l 50 -L 5000 -d -p
+
+set bootargs $bootargs pegmatite-regulator.dyndbg="+p" && run bootcmd
+
+#jgostomski
+# setenv bootargs $bootargs no_console_suspend && run bootcmd
+echo 0 > /sys/power/pm_async
+echo 1 > /sys/power/pm_print_times
+echo 15 > /proc/sys/kernel/printk
+echo 1 > /run/disable-amp-heartbeat
+echo devices > /sys/power/pm_test
+GMSetState.sh <ip address> sleep
+echo mem > /sys/power/state
+
+#jdouglas
+# setenv bootargs $bootargs no_console_suspend && run bootcmd
+echo 1 > /run/disable-amp-heartbeat
+echo 0 > /sys/power/pm_async
+touch /var/fs/pmdebug && sync
+echo 0 > /sys/power/pm_async
+echo 1 > /sys/power/pm_print_times
+echo 15 > /proc/sys/kernel/printk
+echo powersave > /sys/module/pcie_aspm/parameters/policy
+rob call powermanager request_state_change s sleep
+rob call powermanager request_state_change s awake
+insomniad -d -v -t 10000 &
+cat /sys/kernel/debug/wakeup_sources | awk  '{if ($6 != "0") print $0;}'
+greenMicroApp SETSENSOR 01 00 14 0a
+ip addr add 192.168.1.3 dev eth0
+rob call powermanager unregister {i} deviceId (1-9)
+lexutils hydradebug /powermanager/debug
+#rmmod m2m_glue_am
+
+sniffer -i eth0 -f /var/fs/shared/sniff1.pcap &
+insomniad -d -v -t 10000 &
+rob call powermanager request_state_change s sleep
+#echo wake > /var/tmp/pwr_mgmt_state.txt
+rob call powermanager request_state_change s awake
+
+debug stuff:
+cat /sys/kernel/debug/suspend_stats
+cat /sys/kernel/debug/wakeup_sources
+cat /sys/kernel/debug/sleep_time
+######################################################################
+d0018204: 0000038f
+d0018220: ed3fc270
+d0018270: 02010011
+d0018274: 11110001
+
+d0044068 0x00002000
+d0044070 0x10110040
+d0044088 0x00000000
+d0044090 0x00000002
+d0044100 0x00010001
+d0044104 0x00000000
+d0044108 0x00000000
+d004410c 0x00060010
+d0044110 0x00000000
+d0044114 0x00002000
+d0044118 0x00000000
+
+d0045a00: 4014022e
+d0045a04: 00010200
+d0045a08: ffff0007
+d0045a0c: 00000000
+d0045a10: 00002710
+d0045a14: 00000000
+d0045a18: 00000002
+d0045a1c: 00000000
+d0045a20: 00000804
+d0045a24: 00000000
+d0045a28: 00000000
+d0045a2c: 00000000
+d0045a30: 00000000
+d0045a34: 00000000
+d0045a38: 00000000
+d0045a3c: 00000000
+######################################################################
+jfg dpm_resume 875 dev->driver->name: mvebu-pcie
+calling  soc:pcie-controller+ @ 370, parent: soc
+call soc:pcie-controller+ returned 0 after 1 usecs
+calling  0000:00:05.0+ @ 50, parent: pci0000:00
+calling  0000:00:09.0+ @ 48, parent: pci0000:00
+jfg pci_reenable_device 1288
+calling  0000:00:0a.0+ @ 47, parent: pci0000:00
+jfg pci_reenable_device 1288
+call 0000:00:0a.0+ returned 0 after 17379 usecs
+jfg do_pci_enable_device 1251
+calling  0000:00:02.0+ @ 372, parent: pci0000:00
+calling  0000:00:01.0+ @ 984, parent: pci0000:00
+jfg pci_reenable_device 1288
+jfg pci_reenable_device 1288
+jfg pci_set_power_state 845
+jfg pci_reenable_device 1288
+jfg do_pci_enable_device 1251
+jfg do_pci_enable_device 1251
+jfg do_pci_enable_device 1251
+jfg pci_set_master 2891
+jfg pci_set_power_state 845
+jfg pci_set_power_state 845
+jfg pci_set_power_state 845
+jfg __pci_set_master 2827
+jfg pci_set_master 2891
+jfg pci_set_master 2891
+jfg pci_set_master 2891
+call 0000:00:09.0+ returned 0 after 95576 usecs
+jfg __pci_set_master 2827
+jfg __pci_set_master 2827
+jfg __pci_set_master 2827
+call 0000:00:05.0+ returned 0 after 97639 usecs
+call 0000:00:01.0+ returned 0 after 97638 usecs
+calling  0000:01:00.0+ @ 985, parent: 0000:00:01.0
+jfg pci_update_current_state 665
+call 0000:00:02.0+ returned 0 after 93907 usecs
+calling  0000:02:00.0+ @ 6, parent: 0000:00:02.0
+jfg pci_update_current_state 665
+jfg pci_restore_state 1119
+jfg pci_set_power_state 845
+jfg pci_restore_pcie_state 986
+jfg __pci_start_power_transition 755
+jfg pci_find_saved_cap 942
+jfg pci_platform_power_transition 709
+jfg _pci_find_saved_cap 932
+jfg platform_pci_power_manageable 515
+jfg pci_find_ext_capability 337
+jfg    state = 4 pci_platform_pm = 0xc071ee04
+jfg pci_find_next_ext_capability 285
+jfg platform_pci_set_power_state 523
+jfg pci_find_saved_ext_cap 948
+jfg set_state : 0xc031b91c
+jfg _pci_find_saved_cap 932
+jfg pci_find_ext_capability 337
+jfg pci_find_next_ext_capability 285
+jfg set_state return = 0
+jfg pci_find_saved_ext_cap 948
+jfg pci_update_current_state 665
+jfg _pci_find_saved_cap 932
+jfg pci_raw_set_power_state 567
+jfg pci_find_ext_capability 337
+######################################################################
+
+
+/*
+ * rialto.git: driver/mvri/mvri_main.c
+ * rialto.git: driver/Marvell/src/driver/mvri_mainc.c
+ */
+static int mvri_suspend(struct pci_dev  *pdev, pm_message_t     state)
+             ...
+
+3221         pci_save_state(pdev);
+3222 
+3223         /* Possibly we need to evaluate the return values */
+3224         pci_enable_wake(pdev, 3, 1);    /* D3 hot */
+3225         pci_enable_wake(pdev, 4, 1);    /* D3 cold */
+3226         pci_disable_device(pdev);
+3227   >>>   pci_set_power_state(pdev, PCI_D3cold); /* set the state */
+3228         printk("%s: suspend complete\n", DRV_NAME);
+             ...
+   
+
+/*
+ * linux.git: drivers/pci/pci.c
+ */
+int pci_set_power_state(struct pci_dev *dev, pci_power_t state)
+             ...
+ 
+ 833         /*
+ 834          * To put device in D3cold, we put device into D3hot in native
+ 835          * way, then put device into D3cold with platform ops
+ 836          */
+ 837         error = pci_raw_set_power_state(dev, state > PCI_D3hot ?
+ 838                                         PCI_D3hot : state);
+ 839 
+ 840   >>>   if (!__pci_complete_power_transition(dev, state))
+ 841                 error = 0;
+
+
+ struct pci_platform_pm_ops {
+  55         bool (*is_manageable)(struct pci_dev *dev);
+  56  >>>    int (*set_state)(struct pci_dev *dev, pci_power_t state);
+  57         pci_power_t (*choose_state)(struct pci_dev *dev);
+  58         int (*sleep_wake)(struct pci_dev *dev, bool enable);
+  59         int (*run_wake)(struct pci_dev *dev, bool enable);
+  60 };
+
+
+
+######################################################################
+
+
+/*
+ * drivers/pci/pci-driver.c
+ */
+static void pci_pm_default_resume_early(struct pci_dev *pci_dev)
+{
+>>>     pci_power_up(pci_dev);
+        pci_restore_state(pci_dev);
+        pci_fixup_device(pci_fixup_resume_early, pci_dev);
+}
+
+/*
+ * drivers/pci/pci.c
+ */
+void pci_power_up(struct pci_dev *dev)
+{
+        if (platform_pci_power_manageable(dev))
+                platform_pci_set_power_state(dev, PCI_D0);
+
+>>>     pci_raw_set_power_state(dev, PCI_D0);
+        pci_update_current_state(dev, PCI_D0);
+}
+
+pci_raw_set_power_state()
+   retry_count = 0;
+>>>ret = pci_read_config_word()
+   while (ret == EBUSY && retry_count++ < 100) {
+      msleep(10)
+      ret = pci_read_config_word()
+   }
+   if (ret == EBUSY) {
+      printk ("ERROR : pci device is not ready to be configured\n")
+      error()
+   }
+
+/*
+ *  include/linux/pci.h
+ */
+int pci_bus_read_config_word ()
+static inline int pci_read_config_word() {
+   return pci_bus_read_config_word()
+}
+
+/*
+ * drivers/pci/host/pci-mvebu.c
+ */
+static struct pci_ops mvebu_pcie_ops = {
+        .read = mvebu_pcie_rd_conf,
+        .write = mvebu_pcie_wr_conf,
+};
+mvebu_pcie_rd_conf()       // returns PCIBIOS_DEVICE_NOT_FOUND or PCIBIOS_SUCCESSFUL
+   mvebu_pcie_hw_rd_conf()
+>>>   mvebu_readl( );      // will cause an exception
+      // handle trap, if CRS return something ???
+      if (CRS)
+         return -EBUSY
+static inline u32 mvebu_readl(struct mvebu_pcie_port *port, u32 reg)
+{
+>>>     return readl(port->base + reg);
+}

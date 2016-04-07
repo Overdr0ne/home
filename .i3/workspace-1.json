@@ -1,0 +1,74 @@
+// vim:ts=4:sw=4:et
+{
+    // tabbed split container with 1 children
+    "border": "pixel",
+    "floating": "auto_off",
+    "layout": "tabbed",
+    "percent": null,
+    "type": "con",
+    "nodes": [
+        {
+            // splith split container with 2 children
+            "border": "pixel",
+            "floating": "auto_off",
+            "layout": "splith",
+            "percent": null,
+            "type": "con",
+            "nodes": [
+                {
+                    "border": "pixel",
+                    "floating": "auto_off",
+                    "geometry": {
+                       "height": 1078,
+                       "width": 400,
+                       "x": 1,
+                       "y": 1
+                    },
+                    "name": "Tabs Outliner",
+                    "percent": 0.2,
+                    "swallows": [
+                       {
+                       "class": "^google\\-chrome$",
+                       //"instance": "^crx_eggkanocgddhmamlbiijnphhppkpkmkl$",
+                       //"title": "^Tabs\\ Outliner$",
+                       "window_role": "^pop\\-up$"
+                       }
+                    ],
+                    "type": "con"
+                },
+                {
+                    // tabbed split container with 1 children
+                    "border": "pixel",
+                    "floating": "auto_off",
+                    "layout": "tabbed",
+                    "percent": 0.8,
+                    "type": "con",
+                    "nodes": [
+                        {
+                            "border": "pixel",
+                            "floating": "auto_off",
+                            "geometry": {
+                               "height": 1059,
+                               "width": 960,
+                               "x": 406,
+                               "y": 1
+                            },
+                            //"name": "Inbox (2,519) - samorris@lexmark.com - Lexmark Mail - Google Chrome",
+                            "percent": 1,
+                            "swallows": [
+                               {
+                               "class": "^google\\-chrome$",
+                               "instance": "^google\\-chrome$",
+                               //"title": "^Inbox\\ \\(2\\,519\\)\\ \\-\\ samorris\\@lexmark\\.com\\ \\-\\ Lexmark\\ Mail\\ \\-\\ Google\\ Chrome$",
+                               "window_role": "^browser$"
+                               }
+                            ],
+                            "type": "con"
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}
+

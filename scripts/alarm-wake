@@ -1,0 +1,19 @@
+#!/bin/sh
+
+RTC=/sys/class/rtc/rtc0
+LPP=/sys/class/lpp/cpu0
+
+if [[ $1 == "" ]]; then
+    delay=20;
+else
+    delay=$1;
+fi
+
+#
+# Setup wakealarm
+#
+echo "$0: setup alarm to be $delay seconds later";
+CURRENT=`date '+%s'`;
+ALARM=$(($CURRENT + $delay));
+
+echo $ALARM > $RTC/wakealarm

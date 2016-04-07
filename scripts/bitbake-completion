@@ -1,0 +1,85 @@
+# vim : set filetype=sh :
+# Bitbake version 1.18.0
+
+_bitbake()
+{
+	local cur dir prev opts_long opts_short cmds i filename packages
+
+	COMPREPLY=()
+
+	cur=${COMP_WORDS[COMP_CWORD]}
+#	echo $cur
+	prev=${COMP_WORDS[COMP_CWORD-1]}
+#	echo $prev
+
+	opts_long+="--version "
+	opts_long+="--help ";              opts_short+="-h "
+	opts_long+="--buildfile= ";        opts_short+="-b "
+	opts_long+="--continue ";          opts_short+="-k "
+	opts_long+="--tryaltconfigs ";     opts_short+="-a "
+	opts_long+="--force ";             opts_short+="-f "
+	opts_long+="--cmd= ";              opts_short+="-c "
+	opts_long+="--clear-stamp= ";      opts_short+="-C "
+	opts_long+="--read= ";             opts_short+="-r "
+	opts_long+="--postread ";          opts_short+="-R "
+	opts_long+="--verbose ";           opts_short+="-v "
+	opts_long+="--debug ";             opts_short+="-D "
+	opts_long+="--dry-run ";           opts_short+="-n "
+	opts_long+="--dump-signatures ";   opts_short+="-S "
+	opts_long+="--parse-only ";        opts_short+="-p "
+	opts_long+="--show-versions ";     opts_short+="-s "
+	opts_long+="--environment ";       opts_short+="-e "
+	opts_long+="--graphviz ";          opts_short+="-g "
+	opts_long+="--ignore-deps= ";      opts_short+="-I "
+	opts_long+="--log-domains= ";      opts_short+="-l "
+	opts_long+="--profile ";           opts_short+="-P "
+	opts_long+="--ui= ";               opts_short+="-u "
+	opts_long+="--servertype= ";       opts_short+="-t "
+	opts_long+="--revisions-changed "
+	opts_long+="--server-only "
+	opts_long+="--bind= ";             opts_short+="-B "
+	opts_long+="--no-setscene "
+
+	cmds+="listtasks "
+	cmds+="compile "
+	cmds+="build "
+	cmds+="fetch "
+	cmds+="fetchall "
+	cmds+="configure "
+	cmds+="clean "
+	cmds+="cleansstate "
+	cmds+="cleanall "
+	cmds+="install "
+	cmds+="patch "
+	cmds+="devshell "
+
+	if [[ "$prev" == "-c" || "$prev" == "-C" ]]; then
+		COMPREPLY=( $(compgen -W "$cmds" -- "$cur" ) )
+		return 0
+	fi
+	if [[ ${cur} == -* ]]; then
+		if [[ (${cur} == --) || (${cur} == --*) ]]; then
+			COMPREPLY=( $(compgen -W "$opts_long" -- "$cur" ) )
+			return 0
+		else
+			COMPREPLY=( $(compgen -W "$opts_short" -- "$cur" ) )
+			return 0
+		fi
+	fi
+	
+	if [[ ! -d "$PWD/../../meta-lexmark" ]]; then
+		return 1
+	fi
+
+	for i in $(find $PWD/../../meta-lexmark/ -name "$cur*.bb*") ;
+	do
+		filename=$(basename $i)
+		filename="${filename%%_*.bb*}"
+		filename="${filename%%.bb*}"
+		packages+="$filename "
+	done
+	COMPREPLY=( $(compgen -W "$packages" -- "$cur" ) )
+	return 0
+}
+
+complete -F _bitbake bitbake

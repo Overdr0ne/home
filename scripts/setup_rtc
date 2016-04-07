@@ -1,0 +1,64 @@
+#!/bin/sh
+
+RTC=/sys/class/rtc/rtc0
+LPP=/sys/class/lpp/cpu0
+
+if [[ $1 == "" ]]; then
+    delay=20;
+else
+    delay=$1;
+fi
+
+#
+# Only able to run this when the RTC node is present
+#
+if [ -a $RTC ]; then
+    echo "";
+else
+    echo "$RTC not present";
+    exit -1;
+fi
+
+#
+# Setup the RTC IRQ
+#
+RTC_IRQ=0x100025;
+IRQ=`printf '%d' $RTC_IRQ`;
+
+#
+# Put system to sleep mode
+#
+/usr/bin/rob call powermanager request_state_change {ii} deviceId 13 stateId 3
+
+#
+# Check
+#
+if [ -a $LPP ]; then
+    echo "LPP already loaded";
+else
+    /var/fs/cpu0-Gem
+fi
+
+#
+# Make R4 verbose
+#
+echo 1 > /sys/kernel/debug/r4_verbose
+
+#
+# Wake up from IRQ
+#
+echo $IRQ > $LPP/irq_wakeon
+
+#
+# Setup wakealarm
+#
+echo "$0: setup alarm to be $delay seconds later";
+CURRENT=`date '+%s'`;
+ALARM=$(($CURRENT + $delay));
+
+echo $ALARM > $RTC/wakealarm
+
+#
+# Deep sleep
+#
+echo 1 > $LPP/cpu_halt

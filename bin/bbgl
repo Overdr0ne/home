@@ -1,0 +1,6 @@
+git fetch --all
+cd meta-lexmark
+git fetch --all
+cd ..
+git checkout $(git --no-pager log --decorate --oneline --all |  grep -o "tag: stable-[0-9]\+" | grep -o "stable-[0-9]\+"| head -1)
+git submodule update
