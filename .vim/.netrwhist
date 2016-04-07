@@ -1,9 +1,9 @@
 let g:netrw_dirhistmax  =10
 let g:netrw_dirhist_cnt =7
-let g:netrw_dirhist_1='/bonus/scratch/samorris/build-bundle-latest/poky/granite2-cobra-debug/tmp/work-shared/granite2/kernel-source/drivers/cpuidle'
-let g:netrw_dirhist_2='/bonus/scratch/samorris/build-bundle-latest/poky/granite2-cobra-debug/tmp/work-shared/granite2/kernel-source'
-let g:netrw_dirhist_3='/bonus/scratch/samorris/build-bundle-latest/poky/granite2-cobra-debug/tmp/work-shared/granite2/kernel-source/drivers/cpuidle'
-let g:netrw_dirhist_4='/bonus/scratch/samorris/src/power-mgmt/powermanager'
-let g:netrw_dirhist_5='/bonus/scratch/samorris/src/power-mgmt/drivers'
-let g:netrw_dirhist_6='/bonus/scratch/samorris/src/linux/drivers/mailbox'
-let g:netrw_dirhist_7='/bonus/scratch/samorris/src/power-mgmt/powermanager'
+let g:netrw_dirhist_1='/bonus/scratch/samorris/src/power-mgmt/drivers/low-power-mod'
+let g:netrw_dirhist_2='/bonus/scratch/samorris/src/power-mgmt/drivers/low-power-mod/src'
+let g:netrw_dirhist_3='/bonus/scratch/samorris/build-bundle-2/meta-lexmark/recipes-scan/thinscan'
+let g:netrw_dirhist_4='/bonus/scratch/samorris/src/sscore/drivers/core'
+let g:netrw_dirhist_5='/bonus/scratch/samorris/src/sscore'
+let g:netrw_dirhist_6='/bonus/scratch/samorris/src/sscore/drivers'
+let g:netrw_dirhist_7='/bonus/scratch/samorris/src/sscore/drivers/core'

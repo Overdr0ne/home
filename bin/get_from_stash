@@ -1,3 +1,0 @@
-#!/bin/bash
-
-mv /bonus/scratch/samorris/.stash/$1 .

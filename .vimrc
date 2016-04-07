@@ -162,6 +162,8 @@ match ErrorMsg '\s\+$'
 "dictionary completion
 set dictionary=/users/samorris/words/en_US.dic
 
+set cursorline
+
 "-----------------------------------------------------------r
 " Indentation options {{{1
 "
@@ -179,7 +181,7 @@ set noexpandtab
 "set tabstop=2
 
 set wrap
-set tw=80
+"set tw=80
 
 
 "------------------------------------------------------------
