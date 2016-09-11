@@ -8,105 +8,62 @@
 alias ls='ls --color=auto'
 PS1='[\u@\h \W]\$ '
 
-. ~/scripts/sshag.sh
-sagent
+#. ~/scripts/sshag.sh
+#sagent
 
 #setxkbmap -option "ctrl:menu_rctrl"
 
-alias e='vimx'
+alias e='launch-hide emacsclient -c'
+# alias e='vim'
 alias eb='e ~/.bashrc'
 alias ei3='e ~/.i3/config'
 alias ev='e ~/.vimrc'
-#alias ej="e ~/notes/journal/`date +%m%d%y`"
-alias ej="e ~/notes/journal/`date +%y%m%d`"
+alias ej="e ~/notes/journal/`date +%m%d%y`"
 alias es="e ~/.scratch"
-alias em="e ~/memorandum"
+alias em="e ~/.memorandum"
 alias est="edit_story"
 alias la='ls -a'
 alias ll='ls -l'
 alias rrc='source ~/.bashrc'
-#alias g='grep -rin'
-alias g='grep -rin --exclude tags --exclude cscope.out --exclude-dir .git'
-alias qg='qgrep search'
-alias f='sam_find'
+alias g='grep -rinI'
+alias f='find_mod'
 alias bc='bc -l'
 alias mkdir='mkdir -pv'
 alias diff='colordiff'
 alias rm='rm -I --preserve-root'
 alias diskspace='du -S | sort -n -r |less'
-alias st='copy2stash'
+alias st='copy_to_stash'
 alias stg='get_from_stash'
+alias tg='ctags -R --c++-kinds=+p --fields=+iaS --extra=+q'
 alias d2h='dec2hex'
 alias h2d='hex2dec'
-alias b2h='bin2hex'
-alias h2b='hex2bin'
+alias lap='xrandr --output LVDS-1 --auto --output  VGA-1 --off'
+alias vga='xrandr --output LVDS-1 --off --output VGA-1 --auto'
+
+#package manager
+alias pms='pacman -Ss'
+alias pmi='sudo pacman -S'
+alias pmr='sudo pacman -R'
 
 # relocation commands
-alias gh='cd /users/samorris'
-
-alias ggr='cd /bonus/scratch/samorris/src/g2-r4'
-alias glh='cd /bonus/scratch/samorris'
-alias gst='cd /bonus/scratch/samorris/.stash'
-alias gls='cd /bonus/scratch/samorris/src'
-alias gli='cd /bonus/scratch/samorris/src/linux'
-alias gss='cd /bonus/scratch/samorris/src/sscore'
-alias gpm='cd /bonus/scratch/samorris/src/power-mgmt'
-
-alias gml='cd /bonus/scratch/samorris/build-bundle/meta-lexmark'
-alias gmll='cd /bonus/scratch/samorris/build-bundle-latest/meta-lexmark'
-alias gml2='cd /bonus/scratch/samorris/build-bundle-2/meta-lexmark'
-alias gml3='cd /bonus/scratch/samorris/build-bundle-3/meta-lexmark'
-alias gmg='cd /bonus/scratch/samorris/build-bundle/meta-granite'
-alias grgr='cd /bonus/scratch/samorris/build-bundle/meta-granite/recipes-bsp/g2-r4'
-alias grgrl='cd /bonus/scratch/samorris/build-bundle-latest/meta-granite/recipes-bsp/g2-r4'
-alias grgr2='cd /bonus/scratch/samorris/build-bundle-2/meta-granite/recipes-bsp/g2-r4'
-alias grgr3='cd /bonus/scratch/samorris/build-bundle-3/meta-granite/recipes-bsp/g2-r4'
-alias gmgl='cd /bonus/scratch/samorris/build-bundle-latest/meta-granite'
-alias gmg3='cd /bonus/scratch/samorris/build-bundle-3/meta-granite'
-alias gma='cd /bonus/scratch/samorris/build-bundle/meta-armada'
-alias gbb='cd /bonus/scratch/samorris/build-bundle'
-alias gbbl='cd /bonus/scratch/samorris/build-bundle-latest'
-alias gbb3='cd /bonus/scratch/samorris/build-bundle-3'
-alias grpm='cd /bonus/scratch/samorris/build-bundle/meta-lexmark/recipes-lowlevel/power-mgmt'
-alias grpml='cd /bonus/scratch/samorris/build-bundle-latest/meta-lexmark/recipes-lowlevel/power-mgmt'
-alias grpm3='cd /bonus/scratch/samorris/build-bundle-3/meta-lexmark/recipes-lowlevel/power-mgmt'
-alias grl='cd /bonus/scratch/samorris/build-bundle/meta-lexmark/recipes-kernel/linux'
-alias grll='cd /bonus/scratch/samorris/build-bundle-latest/meta-lexmark/recipes-kernel/linux'
-alias grl3='cd /bonus/scratch/samorris/build-bundle-3/meta-lexmark/recipes-kernel/linux'
-
-# yocto commands
-alias bb='bitbake'
-alias bbc='bitbake -C compile'
-alias bbg='bitbake -g -u depexp'
-alias bbcl='bitbake -c cleanall'
-alias bbd='bitbake -c devshell'
-alias bbhl='bitbake core-image-highlevel'
-alias bbhls='bitbake core-image-highlevel-sfp'
-alias bbhlns='bitbake core-image-highlevel-non-touch-sfp'
-alias bbhlm='bitbake core-image-highlevel-mfp'
-alias bbll='bitbake core-image-lowlevel'
-alias bbi='. ./init-build-env -c'
-alias pts='point-to-source'
+alias gh='cd ~'
+alias gls='cd ~/src'
 
 # version control commands
 alias v='git'
 alias vap='git apply'
 alias vk='git_tree'
-alias vka='git_tree_all'
 alias vch='git checkout'
 alias vcb='git checkout -b'
 alias vco='git commit'
 alias vcom='git commit -m'
 alias vcp='git cherry-pick'
-alias vcpc='git cherry-pick --continue'
 alias vcl='~/bin/clean-repo.sh'
 alias va='git add'
 alias vaa='git add -A'
 alias vau='git add -u'
 alias vb='git branch'
-alias vba='git branch -a'
-alias vbr='git branch -r'
-alias vb='git branch'
+
 alias vl='git log'
 alias vr='git rebase'
 alias vri='git rebase -i'
@@ -114,17 +71,13 @@ alias vrh='git reset --hard'
 alias vrm='git rm'
 alias vs='git status'
 alias vsh='git stash'
-alias vsu='git submodule update --init'
+alias vsu='git submodule update'
 alias vd='git diff'
 alias vp='git push'
-alias vf='git fetch --all; git submodule foreach git fetch --all'
+alias vf='git fetch --all'
 alias vfp='git format-patch'
 alias vm='git merge'
 alias vu='git reset HEAD --'
-alias vo='git remote'
-alias voa='git remote add'
-alias vos='git remote set-url'
-alias vov='git remote -v'
 
 #add git autocompletion
 source ~/scripts/git-completion.bash
@@ -156,62 +109,9 @@ shopt -s cmdhist
 HISTCONTROL=ignoredups
 export HISTIGNORE="&:ls:[bf]g:exit"
 
-git_tree(){
-	export GIT_PAGER='less -p"\(HEAD"'
-	git log --oneline --graph --decorate
-	export GIT_PAGER=less
-}
-
-git_tree_all(){
-	export TMP=$GIT_PAGER
-	export GIT_PAGER='less -p"\(HEAD"'
-	git log --oneline --graph --decorate --all
-	export GIT_PAGER='less'
-}
-
-dec2hex(){
-	printf '%x\n' $1
-}
-
-hex2dec(){
-	echo $((16#$1))
-}
-
-bin2hex(){
-	printf '%x\n' "$((2#$1))"
-}
-
-hex2bin(){
-	decArg=$(hex2dec $1)
-	echo "obase=2;${decArg}" | bc
-}
-
-dec2bin(){
-	echo "obase=2;$1" | bc
-}
-
-bchex(){
-	upper_arg=$(echo "$1" | tr '[:lower:]' '[:upper:]')
-	d2h `echo "ibase=16; $upper_arg" | bc`
-	#hex_arg = "ibase=16;${1}"
-	#dec_result = hex_arg | bc
-	#d2h dec_result
-}
-
-copy2stash(){
-	cp "$1" /bonus/scratch/samorris/.stash
-}
-
-copy_from_stash(){
-	mv /bonus/scratch/samorris/.stash/$1 .
-}
-
-edit_story(){
-	vimx ~/Dropbox/Stories/$1
-}
-
-sam_find(){
-	find $2 -iname \*$1\*
+mkcd(){
+    mkdir $1
+    cd $1
 }
 
 up(){
@@ -239,6 +139,14 @@ op () {
 	else
 		echo "'$1' is not a valid file"
 	fi
+}
+
+function swap()
+{
+    local TMPFILE=tmp.$$
+    mv "$1" $TMPFILE
+    mv "$2" "$1"
+    mv $TMPFILE "$2"
 }
 
 xtr () {
@@ -316,15 +224,6 @@ paste(){
     fi
 }
 
-anywait(){
-
-    for pid in "$@"; do
-        while kill -0 "$pid"; do
-            sleep 0.5
-        done
-    done
-}
-
 # Prompt
 #BGREEN='\[\033[1;32m\]'
 #GREEN='\[\033[0;32m\]'
@@ -343,3 +242,5 @@ _stashComplete()
 }
 
 complete -F _stashComplete stg
+
+e ~
