@@ -1,0 +1,70 @@
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+use v5.14;
+use AnyEvent::I3;
+use Getopt::Long;
+
+binmode STDOUT, ":encoding(UTF-8)";
+
+my $tag = 12345;
+my $verbose;
+my $result;
+
+my $treestr = "";
+# receive description of the tree
+my $tree = i3->get_tree->recv;
+my $nNodes = 0;
+
+my $depth = walk_tree( $tree, 0, $nNodes );
+
+print "Select: 0 0 " . $nNodes . " " . $treestr;
+#print "Select: 30 30 30 " . $treestr;
+
+sub walk_tree {
+    my ( $node, $depth ) = @_;
+    my $type        = $node->{'type'};
+    my $orientation = $node->{'orientation'};
+    my $layout      = $node->{'layout'};
+    my $name        = $node->{'name'};
+    my $id          = $node->{'id'};
+
+	# get type and name, for debugging
+	# say "$type, $name";
+
+    # if "type" is workspace
+    if ( $type eq "workspace" ) {
+        $depth = $depth + 1;
+        $nNodes = $nNodes + 1;
+        $treestr = $treestr . "$id 'Workspace: $name' off $depth ";
+    }
+
+    # if "type" is "con" (type for several kinds of containers)
+    if ( $type eq "con" ) {
+        # no orientation, so probably a window
+        if ( $orientation eq "none" ) {
+            # filter out two possible non-windows
+            unless ( $name eq "content" or $name =~ "^i3bar" ) {
+                $depth = $depth + 1;
+                $nNodes = $nNodes + 1;
+                $name =~ s/[\$#@&*()\[\];^`\\]+//g;
+                $name = substr( $name, 0, 21 );
+                $treestr = $treestr . "$id 'Window: $name' off $depth ";
+            }
+        }
+        # orientation, so definitely a split container
+        else {
+            $depth = $depth + 1;
+            $nNodes = $nNodes + 1;
+            $treestr = $treestr . "$id 'Split: $layout-$orientation' off $depth ";
+            #$depth = display_node( "Split ($layout - $orientation)", $depth );
+        }
+    }
+
+    foreach ( @{ $node->{'nodes'} } ) {
+        walk_tree( $_, $depth );
+    }
+
+    return $depth
+}
