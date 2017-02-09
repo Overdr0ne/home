@@ -6,11 +6,13 @@ use v5.14;
 use AnyEvent::I3;
 use Getopt::Long;
 
-binmode STDOUT, ":encoding(UTF-8)";
-
 my $tag = 12345;
 my $verbose;
 my $result;
+
+GetOptions ("tag=i" => \$tag, # numeric
+    "verbose"  => \$verbose);   # flag
+print $tag;
 
 my $treestr = "";
 # receive description of the tree

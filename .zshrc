@@ -1,6 +1,8 @@
 # Path to your oh-my-zsh installation.
   export ZSH=/home/sam/.oh-my-zsh
 
+setopt shwordsplit
+
 setopt no_share_history
 
 # Set name of the theme to load.
@@ -97,10 +99,12 @@ alias ls='ls --color=auto'
 
 #setxkbmap -option "ctrl:menu_rctrl"
 
-alias e='launch-hide emacsclient -c'
+alias e='vim'
+# alias e='launch-hide emacsclient -c'
 # alias e='emacsclient -nw'
 alias eb='e ~/.bashrc'
 alias ez='e ~/.zshrc'
+alias ed='e ~/.dialogrc'
 alias es='e ~/.spacemacs'
 alias ei3='e ~/.i3/config'
 alias ev='e ~/.vimrc'
@@ -125,6 +129,8 @@ alias d2h='dec2hex'
 alias h2d='hex2dec'
 alias lap='xrandr --output LVDS-1 --auto --output  VGA-1 --off'
 alias vga='xrandr --output LVDS-1 --off --output VGA-1 --auto'
+alias dm=dirmenu
+alias cd='pushd'
 
 #package manager
 alias pms='pacman -Ss'
@@ -184,7 +190,8 @@ zshrc_sourced=$(stat -c %Y ~/.zshrc)
 export PROMPT_COMMAND='
 	test $(stat -c %Y ~/.zshrc) -ne $zshrc_sourced && source ~/.zshrc
 	'
-#export PATH=/m/dev-tools/f/n/wip/bin:$PATH
+prmptcmd() { eval "$PROMPT_COMMAND" }
+precmd_functions=(prmptcmd)
 
 export HISTFILESIZE=20000
 export HISTSIZE=10000
@@ -310,6 +317,35 @@ paste(){
     fi
 }
 
+function dirmenu(){
+	dirIter=($(dialog --backtitle 'dirmenu' \
+		--clear \
+		--cancel-label "Exit" \
+		--menu "Please select:" 0 0 0 \
+		$(dirs -v) 3>&2 2>&1 1>&3))
+
+	cmd="cd ~$dirIter"
+	eval $cmd
+}
+
+function i3workspaces(){
+	for i in {1..10}
+	do
+		echo "$i workspace$i"
+	done
+}
+
+function i3menu(){
+	cmd="dialog --backtitle dirmenu --clear --cancel-label Exit --treeview "$(i3treestr)" 3>&2 2>&1 1>&3"
+	echo $cmd
+	tag=`eval "$cmd"`
+	echo $tag
+
+	workspace=$(dialog --backtitle dirmenu --clear --cancel-label Exit --menu "Select workspace" 0 0 10 `i3workspaces` 3>&2 2>&1 1>&3)
+	echo $workspaces
+	i3-msg "[con_id=\"$tag\"] focus; move container workspace $workspace"
+}
+
 # deer(){
 #     emacsclient -nw --eval "(deer)" .
 # }
@@ -336,3 +372,5 @@ _stashComplete()
 }
 
 #complete -F _stashComplete stg
+
+export PATH="/home/.local/lib/anaconda2/bin:$PATH"
