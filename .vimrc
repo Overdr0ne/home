@@ -25,11 +25,30 @@ call vundle#begin()
 " " let Vundle manage Vundle, required
 Plugin 'VundleVim/Vundle.vim'
 
+Plugin 'bkad/CamelCaseMotion'
+
+Plugin 'kergoth/vim-bitbake'
+
 "Plugin 'Valloric/YouCompleteMe'
 
 Plugin 'FredKSchott/CoVim'
 
 Plugin 'rust-lang/rust.vim'
+
+Plugin 'vim-scripts/taglist.vim'
+
+Plugin 'Lokaltog/vim-powerline'
+"Plugin 'vim-airline/vim-airline'
+"Plugin 'vim-airline/vim-airline-themes'
+let g:powerline_pycmd="py3"
+
+Plugin 'easymotion/vim-easymotion'
+
+Plugin 'rafi/awesome-vim-colorschemes'
+
+Plugin 'scrooloose/nerdcommenter'
+
+Plugin 'tpope/vim-fugitive'
 
 " All of your Plugins must be added before the following line
 call vundle#end()            " required
@@ -42,10 +61,14 @@ filetype indent plugin on
 
 " Enable syntax highlighting
 syntax on
+" colorscheme meta5
 
 let CoVim_default_name = "sam"
 let CoVim_default_port = "41977"
 let g:ycm_autoclose_preview_window_after_completion = 1
+
+"let g:airline_powerline_fonts=1
+"let g:Powerline_symbols = 'fancy'
 
 "------------------------------------------------------------
 " Must have options {{{1
@@ -156,6 +179,8 @@ set tags=tags;
 "search as you type
 set incsearch
 
+set fillchars+="" 
+
 "highlight trailing whitespace
 match ErrorMsg '\s\+$'
 
@@ -163,6 +188,26 @@ match ErrorMsg '\s\+$'
 set dictionary=/users/samorris/words/en_US.dic
 
 set cursorline
+
+"word delimiters
+"set iskeyword-=_
+
+vnoremap // y/<C-R>"<CR>
+
+let g:ackprg = 'ag --vimgrep'
+
+set grepprg=ag\ --vimgrep\ $*
+
+set grepformat=%f:%l:%c:%m
+
+command! -nargs=+ MyGrep execute 'silent grep! <args>' | copen 33
+
+" Uncomment the following to have Vim jump to the last position when                                                       
+" reopening a file
+if has("autocmd")
+  au BufReadPost * if line("'\"") > 0 && line("'\"") <= line("$")
+    \| exe "normal! g'\"" | endif
+endif
 
 "-----------------------------------------------------------r
 " Indentation options {{{1
@@ -204,6 +249,7 @@ nnoremap <silent><C-k> :set paste<CR>m`O<Esc>``:set nopaste<CR>
 
 nnoremap <silent>` :Ex<CR>
 
+"cscope
 nmap <C-_>s :cs find s <C-R>=expand("<cword>")<CR><CR>
 nmap <C-_>g :cs find g <C-R>=expand("<cword>")<CR><CR>
 nmap <C-_>c :cs find c <C-R>=expand("<cword>")<CR><CR>
@@ -213,10 +259,45 @@ nmap <C-_>f :cs find f <C-R>=expand("<cfile>")<CR><CR>
 nmap <C-_>i :cs find i ^<C-R>=expand("<cfile>")<CR>$<CR>
 nmap <C-_>d :cs find d <C-R>=expand("<cword>")<CR><CR>
 
-let mapleader="."
+function! LoadCscope()
+  let db = findfile("cscope.out", ".;")
+  if (!empty(db))
+    let path = strpart(db, 0, match(db, "/cscope.out$"))
+    set nocscopeverbose " suppress 'duplicate connection' error
+    exe "cs add " . db . " " . path
+    set cscopeverbose
+  " else add the database pointed to by environment variable 
+  elseif $CSCOPE_DB != "" 
+    cs add $CSCOPE_DB
+  endif
+endfunction
+au BufEnter /* call LoadCscope()
+
+"------------------------------------------------------------
+let mapleader=" "
 
 vnoremap // y/<C-R>"<CR>vnoremap // y/<C-R>"<CR>
 
 noremap <silent> cp :let @*=expand("%:p")<CR>
 
 "------------------------------------------------------------
+" Camel Case Motion
+
+call camelcasemotion#CreateMotionMappings('<leader>')
+map <silent> w <Plug>CamelCaseMotion_w
+map <silent> b <Plug>CamelCaseMotion_b
+map <silent> e <Plug>CamelCaseMotion_e
+map <silent> ge <Plug>CamelCaseMotion_ge
+sunmap w
+sunmap b
+sunmap e
+sunmap ge
+
+"------------------------------------------------------------
+"Tag List
+
+map t :TlistToggle<CR><C-L><C-W><C-W>
+"map t :TlistToggle<CR><C-L><C-W><C-W>
+
+map <Leader> <Plug>(easymotion-prefix)
+map <Leader>f <Plug>(easymotion-s)

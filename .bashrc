@@ -8,17 +8,20 @@
 alias ls='ls --color=auto'
 PS1='[\u@\h \W]\$ '
 
+#. ~/bin/check-ssh-agent
 . ~/scripts/sshag.sh
 sagent
 
 #setxkbmap -option "ctrl:menu_rctrl"
 
-alias e='vimx'
+#alias e='nvim'
+alias e='vim'
 alias eb='e ~/.bashrc'
 alias ei='e ~/.inputrc'
 alias ez='e ~/.zshrc'
 alias ei3='e ~/.i3/config'
 alias ev='e ~/.vimrc'
+#alias ev='e ~/.config/nvim/init.vim'
 #alias ej="e ~/notes/journal/`date +%m%d%y`"
 alias ej="e ~/notes/journal/`date +%y%m%d`"
 alias es="e ~/.scratch"
@@ -42,67 +45,77 @@ alias d2h='dec2hex'
 alias h2d='hex2dec'
 alias b2h='bin2hex'
 alias h2b='hex2bin'
-alias dg='digi-connect'
+alias dg='ssh dg'
 #alias dg='rsh -l user1 157.184.142.36'
-alias dgr='rsh -l root 157.184.142.36'
+alias rdg='ssh rdg'
 alias cd='pushd'
 alias bk='popd'
 alias flip='pushd_builtin'
 alias dirs='dirs -v'
 alias dm='dirmenu'
+alias trim="ex +'bufdo!%s/\s\+$//e' -scxa"
+alias retab="ex +'set ts=2' +'bufdo retab' -scxa"
+alias pss='ps aux |grep -i'
+alias srl='serial'
+alias fls='flash_printer'
+alias ipp='print_ip'
 
 # relocation commands
-alias gh='cd /users/samorris'
+alias gh='cd ~'
 alias glo='cd ~/logs'
-alias ggr='cd /bonus/scratch/samorris/src/g2-r4'
-alias glh='cd /bonus/scratch/samorris'
-alias gst='cd /bonus/scratch/samorris/.stash'
-alias gls='cd /bonus/scratch/samorris/src'
-alias glt='cd /bonus/scratch/samorris/tmp'
-alias gli='cd /bonus/scratch/samorris/src/linux'
-alias gdt='cd /bonus/scratch/samorris/src/linux/arch/arm/boot/dts'
-alias gss='cd /bonus/scratch/samorris/src/sscore'
-alias gpm='cd /bonus/scratch/samorris/src/power-mgmt'
+alias ggr='cd ~/src/g2-r4'
+alias glh='cd ~'
+alias gst='cd ~/.stash'
+alias gls='cd ~/src'
+alias glt='cd ~/tmp'
+alias gli='cd ~/src/linux'
+alias glr='cd ~/src/linux-r4'
+alias gdt='cd ~/src/linux/arch/arm/boot/dts'
+alias gss='cd ~/src/sscore'
+alias gpm='cd ~/src/power-mgmt'
+alias gsm='cd ~/src/storagemgr'
+alias gev='cd ~/ev'
 
-alias gml='cd /bonus/scratch/samorris/build-bundle/meta-lexmark'
-alias gmll='cd /bonus/scratch/samorris/build-bundle-latest/meta-lexmark'
-alias gml2='cd /bonus/scratch/samorris/build-bundle-2/meta-lexmark'
-alias gml3='cd /bonus/scratch/samorris/build-bundle-3/meta-lexmark'
-alias gmg='cd /bonus/scratch/samorris/build-bundle/meta-granite'
-alias grgr='cd /bonus/scratch/samorris/build-bundle/meta-granite/recipes-bsp/g2-r4'
-alias grgrl='cd /bonus/scratch/samorris/build-bundle-latest/meta-granite/recipes-bsp/g2-r4'
-alias grgr2='cd /bonus/scratch/samorris/build-bundle-2/meta-granite/recipes-bsp/g2-r4'
-alias grgr3='cd /bonus/scratch/samorris/build-bundle-3/meta-granite/recipes-bsp/g2-r4'
-alias gmgl='cd /bonus/scratch/samorris/build-bundle-latest/meta-granite'
-alias gmg3='cd /bonus/scratch/samorris/build-bundle-3/meta-granite'
-alias gma='cd /bonus/scratch/samorris/build-bundle/meta-armada'
-alias gbb='cd /bonus/scratch/samorris/build-bundle'
-alias gbb2='cd /bonus/scratch/samorris/build-bundle-2'
-alias gbbl='cd /bonus/scratch/samorris/build-bundle-latest'
-alias gbb3='cd /bonus/scratch/samorris/build-bundle-3'
-alias grpm='cd /bonus/scratch/samorris/build-bundle/meta-lexmark/recipes-lowlevel/power-mgmt'
-alias grpm2='cd /bonus/scratch/samorris/build-bundle-2/meta-lexmark/recipes-lowlevel/power-mgmt'
-alias grpml='cd /bonus/scratch/samorris/build-bundle-latest/meta-lexmark/recipes-lowlevel/power-mgmt'
-alias grpm3='cd /bonus/scratch/samorris/build-bundle-3/meta-lexmark/recipes-lowlevel/power-mgmt'
-alias grl='cd /bonus/scratch/samorris/build-bundle/meta-lexmark/recipes-kernel/linux'
-alias grl2='cd /bonus/scratch/samorris/build-bundle-2/meta-lexmark/recipes-kernel/linux'
-alias grll='cd /bonus/scratch/samorris/build-bundle-latest/meta-lexmark/recipes-kernel/linux'
-alias grl3='cd /bonus/scratch/samorris/build-bundle-3/meta-lexmark/recipes-kernel/linux'
-alias grss3='cd /bonus/scratch/samorris/build-bundle-3/meta-lexmark/recipes-scan/sscore'
-alias grsm='cd /bonus/scratch/samorris/build-bundle/meta-lexmark/recipes-generic/storagemgr'
+BBD=~/build/builders/local
+#BBD=~/build/builders/warner
+#BBD=~/build/builders/chief
+alias sbb="source $BBD/bb/bin/activate"
+alias gml="cd $BBD/meta-lexmark"
+alias gmll="cd $BBD-latest/meta-lexmark"
+alias gmg="cd $BBD/meta-granite"
+alias grlr="cd $BBD/meta-granite/recipes-kernel/linux"
+alias gma="cd $BBD/meta-armada"
+alias gbb="cd $BBD; source bb/bin/activate"
+alias gbbl="cd $BBD-latest"
+alias grpm="cd $BBD/meta-lexmark/recipes-lowlevel/power-mgmt"
+alias grsm="cd $BBD/meta-lexmark/recipes-generic/storagemgr"
+alias grpml="cd $BBD-latest/meta-lexmark/recipes-lowlevel/power-mgmt"
+alias grl="cd $BBD/meta-lexmark/recipes-kernel/linux"
+alias grll="cd $BBD-latest/meta-lexmark/recipes-kernel/linux"
+alias grsm="cd $BBD/meta-lexmark/recipes-generic/storagemgr"
+alias gb="cd ~/build"
+alias gbs="cd ~/build/builders"
 
 # yocto commands
-alias bb='bitbake'
-alias bbc='bitbake -C compile'
-alias bbg='bitbake -g -u depexp'
-alias bbcl='bitbake -c cleanall'
-alias bbd='bitbake -c devshell'
-alias bbhl='bitbake core-image-highlevel'
-alias bbhls='bitbake core-image-highlevel-sfp'
-alias bbhlns='bitbake core-image-highlevel-non-touch-sfp'
-alias bbhlm='bitbake core-image-highlevel-mfp'
-alias bbll='bitbake core-image-lowlevel'
-alias bbi='. ./init-build-env -c'
+BB='docker-bitbake'
+alias bb="$BB"
+alias bbp="$BB -c patch"
+alias bbc="$BB -c compile"
+alias bbg="$BB -g -u depexp"
+alias bbf="$BB -c fetch"
+alias bbcl="$BB -c cleanall"
+alias bbcs="$BB -c cleansstate"
+alias bbd="$BB -c devshell"
+alias bbhl="$BB core-image-highlevel"
+alias bbhls="$BB core-image-highlevel-sfp"
+alias bbhlns="$BB core-image-highlevel-non-touch-sfp"
+alias bbhlls="$BB core-image-highlevel-lite-sfp"
+alias bbhlnm="$BB core-image-highlevel-non-touch-mfp"
+alias bbhllm="$BB core-image-highlevel-lite-mfp"
+alias bbhlm="$BB core-image-highlevel-mfp"
+alias bbtp="$BB core-image-thickprint"
+alias bbll="$BB core-image-lowlevel"
+alias bbi='bb_init'
 alias pts='point-to-source'
 
 # version control commands
@@ -126,6 +139,7 @@ alias vba='git branch -a'
 alias vbr='git branch -r'
 alias vb='git branch'
 alias vl='git log'
+alias vlb='git log -p -M --follow --stat --'
 alias vr='git rebase'
 alias vri='git rebase -i'
 alias vrh='git reset --hard'
@@ -143,6 +157,13 @@ alias vo='git remote'
 alias voa='git remote add'
 alias vos='git remote set-url'
 alias vov='git remote -v'
+alias vam='git am -3'
+
+
+alias pmi="sudo pacman -S"
+alias pms="pacman -Ss"
+alias pmf="pacman -Fs"
+alias pmr="pacman -Rns"
 
 #add git autocompletion
 source ~/scripts/git-completion.bash
@@ -177,12 +198,35 @@ shopt -s cmdhist
 # Ignore duplicates, ls without options and builtin commands
 HISTCONTROL=ignoredups
 export HISTIGNORE="&:ls:[bf]g:exit"
-export EDITOR="vimx"
-export VISUAL="vimx"
+export EDITOR="vim"
+export VISUAL="vim"
 
 ###############################################################################
 # My Functions
 ###############################################################################
+
+bb_init(){
+	gbb
+	. ./init-build-env -c $1
+}
+
+print_ip(){
+	ip addr show eno1|grep 'inet '|awk '{print $2}'|sed 's:/23::'
+}
+
+flash_printer(){
+	#nc $1 9100 <$2
+	nc $1 10010 <$2
+}
+
+serial(){
+	sudo picocom -b 115200 /dev/ttyUSB$1
+}
+
+mkcd(){
+	mkdir $1
+	cd $1
+}
 
 i3mvw(){
 	i3-msg "workspace $1; move workspace to output DVI-$2"
@@ -190,6 +234,14 @@ i3mvw(){
 
 digi-connect(){
 	telnet 157.184.142.36 20$1
+}
+
+secure-digi-connect(){
+	ssh user1@157.184.142.36
+}
+
+secure-digi-connect-root(){
+	ssh root@157.184.142.36
 }
 
 vbf(){
@@ -231,6 +283,14 @@ vpcsf(){
 	vpcf sam
 }
 
+vpcg(){
+	vpc gitlpm
+}
+
+vpcgf(){
+	vpcf gitlpm
+}
+
 vdp(){
 	if [ -z "$1" ]; then
 		vd HEAD~1 HEAD
@@ -245,8 +305,22 @@ vuml(){
 	vcom "update meta-lexmark"
 }
 
+vumg(){
+	gbb
+	va meta-granite
+	vcom "update meta-granite"
+}
+
 bbclc(){
 	bbcl $1 && bbc $1
+}
+
+bbcsc(){
+	bbcs $1 && bbc $1
+}
+
+bbcld(){
+	bbcl $1 && bbd $1
 }
 
 stemu(){
@@ -398,6 +472,21 @@ op () {
 	fi
 }
 
+linux_ws(){
+	case $1 in
+		mono)
+			rm w s
+			ln -s /home/sam/src/build-bundle/poky/granite2-mono-debug/tmp/work/granite2-poky-linux-gnueabi/linux-granite-upstream/4.11.12+gitAUTOINC+2567c0991d-r0/ w
+			ln -s /home/sam/src/build-bundle/poky/granite2-mono-debug/tmp/work-shared/granite2/kernel-source/ s
+			;;
+		color)
+			rm w s
+			ln -s /home/sam/src/build-bundle/poky/granite2v8-color-debug/tmp/work-shared/granite2v8/kernel-source/ s
+			ln -s /home/sam/src/build-bundle/poky/granite2v8-color-debug/tmp/work/granite2v8-poky-linux/linux-granite-upstream/4.11.12+gitAUTOINC+2567c0991d-r0/ w
+	esac
+}
+
+
 xtr () {
 	#strip extension
 	filename="${1%.*}"
@@ -422,6 +511,8 @@ xtr () {
 			*.tgz)
 				tar xzf $1  ;;
 			*.tzo)
+				lzop -d $1  ;;
+			*.lzo)
 				lzop -d $1  ;;
 			*.zip)
 				unzip $1  ;;
@@ -517,11 +608,39 @@ dirmenu(){
 }
 
 agv(){
-	ag $1 $2 |vimx -
+	ag --vimgrep $1 $2 |vimx -
 }
 
-cp(){
+agn(){
+	ag ~/notes $1
+}
+
+cpa(){
 	rsync -a $1 $2
+}
+
+ctg(){
+	case $1 in
+		lpm)
+			ctags -R --exclude=drivers/w --exclude=.git/ --exclude=../libinput/.git . ../libinput/ ;;
+		*)
+			echo "No default project to tag" ;;
+	esac
+}
+
+i3st(){
+	for i in `seq 1 10`;
+	do
+		i3-save-tree --workspace $i > ~/.i3/test/workspace-$i.json
+		sed -i 's:// ::g' ~/.i3/lex/workspace-$i.json
+	done
+}
+
+i3sn(){
+	FOCUSED=$(wmctrl -lp | grep $(xprop -root | grep _NET_ACTIVE_WINDOW | head -1 | awk '{print $5}' | sed 's/,//' | sed 's/^0x/0x0/'))
+	FPID=$(echo $FOCUSED | awk '{print $3}')
+	FNME=$(echo $FOCUSED | cut -f -4  -d ' ' --complement)
+	xdotool search -all --pid $FPID --name "$FNME" set_window -name "$*"
 }
 
 i3menu(){
@@ -543,7 +662,25 @@ i3menu(){
 #}
 
 sdd(){
-	dd if=./$1 of=/dev/sd$2 bs=1M && sync
+	sudo dd if=./$1 of=/dev/sd$2 bs=1M && sync
+}
+
+mktestspace(){
+	WORKSPACE=$1
+	test -z $1 && echo "usage: mktestspace <workspace>" && return
+
+	i3-msg "workspace $WORKSPACE; append_layout ~/.i3/lex/workspace-7.json"
+	i3-msg "workspace $WORKSPACE; exec ~/bin/init-test-sh 1"
+	i3-msg "workspace $WORKSPACE; exec ~/bin/init-test-sh 2"
+	i3-msg "workspace $WORKSPACE; exec ~/bin/init-test-sh 3"
+	i3-msg "workspace $WORKSPACE; exec ~/bin/init-test-sh 4"
+	i3-msg "workspace $WORKSPACE; exec ~/bin/init-test-sh 5"
+	i3-msg "workspace $WORKSPACE; exec ~/bin/init-test-sh 6"
+	i3-msg "workspace $WORKSPACE; exec ~/bin/init-test-sh 7"
+	i3-msg "workspace $WORKSPACE; exec ~/bin/init-test-sh 8"
+	i3-msg "workspace $WORKSPACE; exec ~/bin/init-test-sh 9"
+	i3-msg "workspace $WORKSPACE; exec ~/bin/init-test-sh 10"
+	#i3-msg "workspace $WORKSPACE; exec urxvt -e bash -c \'i3st 10; bash\'"
 }
 
 # autocomplete specs
@@ -554,4 +691,3 @@ _stashComplete()
 }
 
 complete -F _stashComplete stg
-
